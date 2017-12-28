@@ -1,83 +1,81 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+	"log"
 	"strconv"
-	"strings"
+
+	"github.com/adventofcode/2017/helpers"
 )
 
 func main() {
-	fileName := "input"
+	fileName := "../day02_corruptionChecksum/input"
 	fmt.Println("reading ", fileName)
-	file, err := os.Open(fileName)
-	// read the whole file at once
-	if err != nil {
-		panic(err)
-	}
-	scanner := bufio.NewScanner(file)
+	inputBytes := helpers.Input(fileName)
 
-	checksum(input)
+	checksum(inputBytes)
 }
 
 func checksum(inputBytes []byte) int {
 	var result int
-	var input string
 	var lowest int
 	var highest int
 	var numStr string
 
 	for i := 0; i < len(inputBytes); i++ {
+		// convert to string
 		str := string(inputBytes[i])
-		if str == "	" {
-			fmt.Println("tab! ", numStr, len(numStr))
-			num, err := strconv.Atoi(strings.TrimSpace(numStr))
-			if err != nil {
-				fmt.Println("error!")
-				return -1
-			}
-			highest, lowest = compare(num, highest, lowest)
-			// resets
+		switch str {
+		case "	":
+			// fmt.Println("tab, now can compare ", numStr)
+			highest, lowest = readyToCompare(numStr, highest, lowest)
 			numStr = ""
-			num = 0
-		}
-		fmt.Println(str)
-		if str == "\n" {
-			fmt.Println("newline!")
-			diff := highest - lowest
-			result += diff
-			// resets
-			lowest = 0
+		case "\n":
+			fmt.Println("newline! Need to compare last number. Setting highest and lowest back to zero and summing things up.")
+			highest, lowest = readyToCompare(numStr, highest, lowest)
+
+			numStr = ""
+			result += highest - lowest
 			highest = 0
-			fmt.Println("result is now ", result)
+			lowest = 0
+			fmt.Println("result so far: ", result)
+		default:
+			// fmt.Println("character! Adding to str", str)
+			numStr += str
 		}
-		numStr += str
-		fmt.Println(numStr)
 	}
-	fmt.Println(input)
-	// walk thru each line
-	// find max diff, sum
-	// add to tally
-	// repeat
+
+	highest, lowest = readyToCompare(numStr, highest, lowest)
+	numStr = ""
+	result += highest - lowest
+
 	fmt.Println("result: ", result)
 	return result
 }
 
+func readyToCompare(numStr string, highest, lowest int) (int, int) {
+	num, err := strconv.Atoi(numStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return compare(num, highest, lowest)
+}
+
 func compare(current, highest, lowest int) (int, int) {
+	fmt.Println("comparing ", current, highest, lowest)
 	if highest == 0 {
 		highest = current
 	}
 	if lowest == 0 {
 		lowest = current
 	}
-	fmt.Println("comparing ", current, highest, lowest)
 	if current > highest {
 		highest = current
 	}
 	if current < lowest {
 		lowest = current
 	}
-	fmt.Println("comparing complete", highest, lowest)
+
+	// fmt.Println("comparing complete", highest, lowest)
 	return highest, lowest
 }
