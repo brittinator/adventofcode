@@ -67,18 +67,53 @@ func (m *maze) move() bool {
 	return false
 }
 
+// move current num number of spaces, return true if reached end of maze
+func (m *maze) movePtTwo() bool {
+	// fmt.Println("map is ", m.mmap)
+	// fmt.Println("cursor is ", m.cursor)
+	// find cursor and grab old value
+	cur := m.cursor // 0
+	// check if cursor will still be in map
+	if m.cursor >= len(m.mmap) {
+		return true
+	}
+	// move cursor to next value
+	m.cursor = cur + m.mmap[cur] // 0 + 0
+	if m.mmap[cur] >= 3 {
+		// new weird rule
+		m.mmap[cur]--
+	} else {
+		// increment old cursor value +1
+		m.mmap[cur]++
+	}
+	// increment step
+	m.steps++
+	// fmt.Println("end map is ", m.mmap)
+	// fmt.Println("end cursor is ", m.cursor)
+	return false
+}
+
 func main() {
 	fileName := "../day05_maze/input"
-	fmt.Println("reading ", fileName)
 	inputBytes := helpers.Input(fileName)
 
 	input := convertToSlice(inputBytes)
 	// fmt.Println("input ", input)
-	maze := maze{input, 0, 0}
+	mazeOne := maze{input, 0, 0}
 
 	for {
-		if maze.move() {
-			fmt.Printf("maze completed in %v steps\n", maze.steps)
+		if mazeOne.move() {
+			fmt.Printf("maze completed in %v steps\n", mazeOne.steps)
+			break
+		}
+	}
+
+	inputBytes = helpers.Input(fileName)
+	input = convertToSlice(inputBytes)
+	mazeTwo := maze{input, 0, 0}
+	for {
+		if mazeTwo.movePtTwo() {
+			fmt.Printf("maze with weird offset completed in %v steps\n", mazeTwo.steps)
 			return
 		}
 	}
