@@ -99,18 +99,44 @@ func main() {
 	for {
 		// fmt.Println("number of cycles :'", bank.cycles)
 		max, index := bank.findMax()
-		fmt.Println("max and index are :", bank.bnk, max, index)
+		// fmt.Println("max and index are :", bank.bnk, max, index)
 		// remove values at index
 		input[index] = 0
 
 		bank.redistribute(max, index)
-		fmt.Println("after redistributed: ", bank.bnk)
+		// fmt.Println("after redistributed: ", bank.bnk)
 		// add a cycle
 		bank.cycles++
 		// add to seen bucket
 		if bank.seen() {
 			fmt.Printf("combo %v seen before. \n Took %v cycles.\n", bank.bnk, bank.cycles)
-			return
+			bank.cycles = 0
+			bank.combos = map[string]int{}
+			var toFind string
+			for _, n := range bank.bnk {
+				toFind += strconv.Itoa(n)
+			}
+			bank.combos[toFind] = 1
+			fmt.Println("resetting state and finding it again")
+			// return
+			// sloppy nested for loops but it works b/c returning after found
+			for {
+				// fmt.Println("number of cycles :'", bank.cycles)
+				max, index := bank.findMax()
+				// fmt.Println("max and index are :", bank.bnk, max, index)
+				// remove values at index
+				input[index] = 0
+
+				bank.redistribute(max, index)
+				// fmt.Println("after redistributed: ", bank.bnk)
+				// add a cycle
+				bank.cycles++
+				// add to seen bucket
+				if bank.seen() {
+					fmt.Printf("combo %v seen before. \n Took %v cycles to see it a 3rd time.\n", bank.bnk, bank.cycles)
+					return
+				}
+			}
 		}
 	}
 }
