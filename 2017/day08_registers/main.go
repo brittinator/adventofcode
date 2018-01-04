@@ -98,9 +98,21 @@ func main() {
 
 	registry := make(map[string]int, 1000)
 	scanner := bufio.NewScanner(file)
+	var hiAllTime struct {
+		k string
+		v int
+	}
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		registry = dealWithLine(line, registry)
+
+		for k, v := range registry {
+			if v > hiAllTime.v {
+				hiAllTime.v = v
+				hiAllTime.k = k
+			}
+		}
 	}
 	fmt.Println("registry", registry)
 
@@ -117,4 +129,6 @@ func main() {
 	}
 
 	fmt.Printf("Highest value after is %v from %v\n", hi.v, hi.k)
+	fmt.Printf("Highest value of all time is %v from %v\n", hiAllTime.v, hiAllTime.k)
+
 }
