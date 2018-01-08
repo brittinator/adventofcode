@@ -62,7 +62,8 @@ func endOfJunk(input []byte, start int) int {
 	return 0
 }
 
-func removeGarbage(inputBytes []byte) []byte {
+func removeGarbage(inputBytes []byte) ([]byte, int) {
+	score := 0
 	output := make([]byte, 0, len(inputBytes))
 	fmt.Println("Remove garbage: len ", len(inputBytes), string(inputBytes))
 	i := 0
@@ -77,10 +78,13 @@ func removeGarbage(inputBytes []byte) []byte {
 			// start of junk, need to find end of junk
 			end := endOfJunk(inputBytes, i)
 			fmt.Println("end ", end)
-			if end == 0 {
-				// cut off the rest of the input
-				return output
-			}
+			// if end == 0 {
+			// 	// cut off the rest of the input
+			// 	// add
+			// 	return output, score
+			// }
+			score = score + end - i - 1
+
 			i = end + 1
 			fmt.Println("i is now: ", i)
 			continue
@@ -88,17 +92,18 @@ func removeGarbage(inputBytes []byte) []byte {
 		i++
 	}
 	fmt.Println("returning output: ", string(output))
-	return output
+	return output, score
 }
 
 func main() {
+	// part 2: count up the garbage
+
 	fileName := "../day09_stream/input"
 	inputBytes := helpers.Input(fileName)
-	fmt.Println(string(inputBytes))
 	inputBytes = removeAndString(inputBytes)
-	fmt.Println(string(inputBytes))
-	inputBytes = removeGarbage(inputBytes)
+	inputBytes, junkScore := removeGarbage(inputBytes)
 	fmt.Println(string(inputBytes))
 	fmt.Println(score(inputBytes))
+	fmt.Println("junk score: ", junkScore)
 
 }
