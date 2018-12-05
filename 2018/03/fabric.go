@@ -29,11 +29,6 @@ func createSquareArray(size int) fabric {
 }
 
 func main() {
-	// a1 a2 a3 a4 a5
-	// b1 b2 b3 b4 b5
-	// c1 c2 c3 c4 c5
-	// [[a1,b1,c1]][[a2,b2,c2]][[a3,b3,c3]][[a4,b4,c4]][[a5,b5,c5]]
-	// so for #123 @ 3,1: 2,2 it would fill b4,b5,c4,c5
 	f, err := os.Open("./input")
 	defer f.Close()
 	if err != nil {
@@ -45,14 +40,16 @@ func main() {
 	fabric := createSquareArray(1000)
 
 	scanner := bufio.NewScanner(f)
+	var lines []string
 	for scanner.Scan() {
 		// go thru each line
 		l := scanner.Text()
+		lines = append(lines, l)
 		// ditch everything preceeding @
 
 		// separate by :
 		dimensions := strings.Split(strings.Split(l, "@ ")[1], ": ")
-		fmt.Println(l, dimensions)
+		// fmt.Println(l, dimensions)
 
 		// left is how far from edge
 		// right is number of spaces to fill
@@ -79,7 +76,7 @@ func main() {
 			// fmt.Println(i, xOffset, y)
 			for j := 0; j < xWidth; j++ {
 				x := xOffset + j
-				fmt.Printf("%v: at %v:%v -->%v\n", j, x, y, fabric.array[x][y])
+				// fmt.Printf("%v: at %v:%v -->%v\n", j, x, y, fabric.array[x][y])
 				fabric.array[x][y]++
 			}
 		}
@@ -96,12 +93,41 @@ func main() {
 	// return tally
 	fmt.Println("Overlapping: ", fabric.overlappingClaims)
 
-	// to fill:
+	// find the non-overlapping claim
+	for _, l := range lines {
+		// grab the id
+		id := strings.Split(l, " @")[0]
+		// fmt.Println("next scan ", id)
 
-	// index is num-1, width
-	// length is down,or inner index is num-1
+		// separate by :
+		dimensions := strings.Split(strings.Split(l, "@ ")[1], ": ")
+		// fmt.Println(l, dimensions)
 
-	// when a space is filled, increment
-	// if the number is >= 2, add to a tally
+		// left is how far from edge
+		// right is number of spaces to fill
+		xOffset, _ := strconv.Atoi(strings.Split(dimensions[0], ",")[0])
+		yOffset, _ := strconv.Atoi(strings.Split(dimensions[0], ",")[1])
+		xWidth, _ := strconv.Atoi(strings.Split(dimensions[1], "x")[0])
+		yHeight, _ := strconv.Atoi(strings.Split(dimensions[1], "x")[1])
 
+		if !fabric.doIOverlap(xOffset, yOffset, xWidth, yHeight) {
+			fmt.Println(id)
+			os.Exit(0)
+		}
+	}
+}
+
+func (f *fabric) doIOverlap(xStart, yStart, width, height int) bool {
+	for y := yStart; y < yStart+height; y++ {
+		for x := xStart; x < xStart+width; x++ {
+			// fmt.Println(x, y)
+			if f.array[x][y] >= 2 {
+				// fmt.Println("true: ", x, y, f.array[x][y])
+				return true
+			}
+			// fmt.Println("false: ", x, y, f.array[x][y])
+		}
+	}
+
+	return false
 }
