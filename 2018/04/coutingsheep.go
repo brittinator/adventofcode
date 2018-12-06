@@ -39,8 +39,8 @@ func main() {
 		fmt.Println(log.date.Format(layout), log.msg)
 	}
 
-	strategyOne(allLogs)
-
+	// strategyOne(allLogs)
+	strategyTwo(allLogs)
 }
 
 type logEntry struct {
@@ -208,6 +208,105 @@ func strategyOne(allLogs []logEntry) {
 	// the overlap would be
 	// [4..37, 33..40, 46..58, 51..53]
 	// 51,52 minutes the guard is asleep both days
+}
+
+func strategyTwo(allLogs []logEntry) {
+	// Strategy 2: Of all guards, which guard is most frequently asleep on the same minute?
+
+	type sleepTime struct {
+		start, end int
+	}
+
+	type guard struct {
+		id          string
+		asleepRange []sleepTime
+		// the minute most frequently where the guard is asleep
+		frequentMinute   int
+		numOfTimesAsleep int
+	}
+
+	allGuards := make(map[string]guard)
+	var currentGuard guard
+	var asleepTime sleepTime
+
+	for _, l := range allLogs {
+		fmt.Println("current guard: ", currentGuard.id)
+
+		if strings.Contains(l.msg, "Guard") {
+			// zero out the sleep time
+			asleepTime = sleepTime{}
+			contents := strings.Split(l.msg, " ")
+			var id string
+			for _, text := range contents {
+				if strings.Contains(text, "#") {
+					id = text
+					break
+				}
+			}
+
+			// find guard by id
+			if g, ok := allGuards[id]; ok {
+				currentGuard = g
+				continue
+			} else {
+				// start a new guard entry
+				currentGuard = guard{
+					id:          id,
+					asleepRange: []sleepTime{},
+				}
+				allGuards[id] = currentGuard
+			}
+		} else {
+			if l.msg == "falls asleep" {
+				asleepTime.start = l.date.Minute()
+			}
+			if l.msg == "wakes up" {
+				// stop the sleep time
+				asleepTime.end = l.date.Minute()
+				currentGuard.asleepRange = append(currentGuard.asleepRange, asleepTime)
+				allGuards[currentGuard.id] = currentGuard
+			}
+		}
+	}
+
+	for i, g := range allGuards {
+		fmt.Println("guard ", g.id)
+		var frequentMinute int
+		sleepFrequency := make(map[int]int)
+
+		for _, r := range g.asleepRange {
+			fmt.Printf("	%v --> %v\n", r.start, r.end)
+			for i := r.start; i < r.end; i++ {
+				sleepFrequency[i]++
+			}
+		}
+		var highScore int
+		for k, v := range sleepFrequency {
+			if v > highScore {
+				highScore = v
+				frequentMinute = k
+			}
+		}
+
+		g.frequentMinute = frequentMinute
+		g.numOfTimesAsleep = highScore
+		allGuards[i] = g
+		fmt.Println("frequently slept during: ", frequentMinute, highScore)
+	}
+
+	var highScore int
+	var guardID string
+	for _, g := range allGuards {
+		// fmt.Println("guard: ", g)
+		if g.numOfTimesAsleep > highScore {
+			highScore = g.numOfTimesAsleep
+			guardID = g.id
+		}
+	}
+
+	fmt.Println("guard that slept the most: ", guardID)
+	chosenGuard := allGuards[guardID]
+	fmt.Printf("guard %v slept during the %v minute %v times\n", chosenGuard.id, chosenGuard.frequentMinute, chosenGuard.numOfTimesAsleep)
 }
 
 // entries sorts the logs by date.
