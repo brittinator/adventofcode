@@ -62,8 +62,9 @@ but can discard A, B, F, and C (blacklist?) as their boundaries are infinite
 */
 
 type location struct {
-	name int // line number
-	x, y int
+	name     int // line number
+	x, y     int
+	distance int // for part 2
 }
 
 func main() {
@@ -131,7 +132,8 @@ func main() {
 		grid[i] = make([]location, largestY)
 	}
 
-	partOne(locations, grid, smallestX, smallestY, largestX, largestY)
+	// partOne(locations, grid, smallestX, smallestY, largestX, largestY)
+	partTwo(locations, grid, smallestX, smallestY, largestX, largestY)
 }
 
 func partOne(knownLocations []location, grid [][]location,
@@ -198,6 +200,61 @@ func partOne(knownLocations []location, grid [][]location,
 	}
 
 	fmt.Println("the largest area is ", largestArea)
+}
+
+func partTwo(knownLocations []location, grid [][]location,
+	smallestX, smallestY, largestX, largestY int) {
+	// What is the size of the region containing all locations
+	// which have a total distance to all given coordinates of less than 10000?
+
+	// find the size from 1 point to knownLocations
+	// add them up, if >= 1000 discard, don't care
+
+	// find the region with points that all have sizes < 1000
+	// return the size of the region
+	const limit = 10000
+
+	// go thru the grid one by one to see what the total distance is
+	for xCoor, loc := range grid {
+		for yCoor := range loc {
+			grid[xCoor][yCoor].x = xCoor
+			grid[xCoor][yCoor].y = yCoor
+
+			distance := findDistance(&grid[xCoor][yCoor], knownLocations)
+			if distance >= limit {
+				grid[xCoor][yCoor].distance = 0
+				continue
+			}
+
+			grid[xCoor][yCoor].distance = distance
+		}
+	}
+
+	// add them up, if >=limit discard, don't care
+
+	// find the region with points that all have sizes <limit
+	// return the size of the region
+	var size int
+	for _, loc := range grid {
+		for _, l := range loc {
+			fmt.Println(l.distance)
+			if l.distance < limit && l.distance != 0 {
+				size++
+			}
+		}
+	}
+
+	fmt.Println("size: ", size)
+}
+
+// findDistance finds all of the distances from this point to the known locations.
+func findDistance(here *location, knownLocations []location) int {
+	var totalDistance int
+	for _, spot := range knownLocations {
+		totalDistance = totalDistance + manhattanDistance(*here, spot)
+	}
+	fmt.Println("distance: ", totalDistance)
+	return totalDistance
 }
 
 func findOwner(here *location, knownLocations []location) location {
