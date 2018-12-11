@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	f, err := os.Open("./input0.txt")
+	f, err := os.Open("./input.txt")
 	if err != nil {
 		log.Fatal("failed to open", err)
 	}
@@ -30,84 +30,85 @@ func main() {
 		}
 	}
 
-	fmt.Println(len(raw))
-	partOne(raw)
-
-	// take the 1st 2 numbas
-	// pass into node as headers
-	// pop those off array
-	// for numchildren,
-	// create node with the headers for the headers
-
-	// to create a node,
-	// first part (2 numbers) are the headers
-	// add that to a new node
-
-	// end condition is either you've reached all the children or then numchildren is zero
-
+	rootNode := partOne(raw)
+	partTwo(rootNode)
 }
 
 var sum = 0
 
-func partOne(input []int) {
-	// create root node
-	rootNode := newNode(input[0], input[1])
-	currentNode := rootNode
+func partTwo(rootNode *node) {
+	var sum int
+	// What is the value of the root node?
 
-	pointer := 2
-	for i := 0; i < currentNode.numChildren; i++ {
-		pointer = buildNodes(input, currentNode, pointer)
-	}
-	currentNode.parseMetadata(input, pointer)
-	fmt.Println(currentNode)
-	fmt.Println(sum)
+	// get root's metadata,
+	// see if they correspond to nodes
+	// get their metadata
+	// see if they correspond to nodes
+	sum = rootNode.getNodeValue(sum)
+
+	fmt.Println("sum part two: ", sum)
+
 }
 
-func buildNodes(input []int, currentNode *node, pointer int) int {
-	if input[pointer] == 0 {
-		// first move index +1
-		pointer++
-		// create a new node
-		numMeta := input[pointer]
-		thisNode := newNode(0, numMeta)
-		currentNode.children = append(currentNode.children, thisNode)
-
-		// reset current node to thisNode
-		currentNode = thisNode
-		pointer++
-		currentNode.parseMetadata(input, pointer)
-
-		pointer = pointer + numMeta
-		return pointer
+func (n *node) getNodeValue(value int) int {
+	fmt.Println("node ", n, value)
+	/*
+	   If a node has no child nodes, its value is the sum of its metadata entries.
+	   if a node does have child nodes, the metadata entries become indexes
+	   which refer to those child nodes.
+	*/
+	for _, meta := range n.metadata {
+		if n.numChildren == 0 {
+			value = value + meta
+			continue
+		}
+		if len(n.children) > meta-1 {
+			value = n.children[meta-1].getNodeValue(value)
+		}
 	}
 
-	// it's talking about children or meta of other nodes
-	numChildren := input[pointer]
-	numMeta := input[pointer+1]
-	// make a new node
-	thisNode := newNode(numChildren, numMeta)
+	return value
+}
+
+func partOne(input []int) *node {
+	// create root node
+	dummyNode := newNode(0, 0)
+	buildNodes(input, dummyNode, 0)
+
+	fmt.Println("sum >", sum)
+	return dummyNode.children[0]
+}
+
+func buildNodes(input []int, currentNode *node, index int) int {
+	fmt.Println("current node: ", currentNode.numChildren, currentNode.numMeta,
+		currentNode.children, currentNode.metadata)
+	thisNode, index := parseHeader(input, index)
 	currentNode.children = append(currentNode.children, thisNode)
 	currentNode = thisNode
-	pointer = pointer + 2
-	//call this func again numchildren times
+	//call this func again num children times
 	for i := 0; i < currentNode.numChildren; i++ {
-		pointer = buildNodes(input, currentNode, pointer)
+		index = buildNodes(input, currentNode, index)
 	}
 	//after recursion returns, do the parsemeta on itself
-	currentNode.parseMetadata(input, pointer)
-	pointer++
-	return pointer
-
+	index = currentNode.parseMetadata(input, index)
+	return index
 }
 
-func (n *node) parseMetadata(input []int, startingIndex int) {
+func parseHeader(input []int, startingIndex int) (*node, int) {
+	numChildren := input[startingIndex]
+	numMeta := input[startingIndex+1]
+
+	return newNode(numChildren, numMeta), startingIndex + 2
+}
+
+func (n *node) parseMetadata(input []int, startingIndex int) int {
 	numMeta := n.numMeta
 	for i := 0; i < numMeta; i++ {
 		n.metadata[i] = input[startingIndex+i]
 		sum = sum + input[startingIndex+i]
 		fmt.Println("adding ", input[startingIndex+i])
 	}
-	fmt.Println("meta done: ", n.metadata)
+	return startingIndex + numMeta
 }
 
 // node is a single node, but can have children.
