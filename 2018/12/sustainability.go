@@ -51,14 +51,35 @@ func partOne(state []string, rules map[string]string) {
 	state = append(state, spacer...)
 	start := space
 
-	fmt.Println("len ", len(state))
-	for i := 0; i < 20; i++ {
-		fmt.Printf("state>> i: %v\n%v\n", i, strings.Join(state, ""))
+	// fmt.Println("len ", len(state))
+	const numGeneration = 2000
+	gens := make(map[int]int)     // generation:sum
+	seenSums := make(map[int]int) // sum:gen
+	seenSums[addPots(state, start)] = 0
+	gens[0] = addPots(state, start)
+	for i := 0; i < numGeneration; i++ {
+		// fmt.Printf("state>> i: %v\n%v\n", i, strings.Join(state, ""))
 		state = generation(state, rules)
+		sum := addPots(state, start)
+		fmt.Printf("%v: %v previous %v diff%v\n", i, sum, gens[i-1], sum-gens[i-1])
+		gens[i] = sum
+		if gen, found := seenSums[sum]; found {
+			fmt.Printf("sum %v from %v seen again in generation %v\n", sum, gen, i)
+		} else {
+			seenSums[sum] = i
+		}
 	}
 
 	fmt.Printf("FINAL len: %v\n%v   %v\n", len(state), strings.Join(state, ""), start)
 	addPots(state, start)
+
+	// this is for part two.
+	// I found that the difference between the previous sum and the current sum is 53
+	finalSum := 27862
+	for i := 500; i < 50000000000; i++ {
+		finalSum = finalSum + 53
+	}
+	fmt.Println("finalSum: ", finalSum)
 }
 
 func generation(beginningState []string, rules map[string]string) []string {
@@ -73,7 +94,6 @@ func generation(beginningState []string, rules map[string]string) []string {
 				beginningState[i+1] +
 				beginningState[i+2]
 		if v, ok := rules[toMatch]; !ok {
-			// newState = append(newState, ".")
 			fmt.Println("panic ", newState)
 			log.Panic("rule not found for ", i, toMatch)
 		} else {
@@ -81,19 +101,11 @@ func generation(beginningState []string, rules map[string]string) []string {
 		}
 	}
 
-	return append(newState, ".", ".")
+	return append(newState, ".", ".", ".", ".")
 }
 
 func addPots(state []string, start int) int {
 	// split into positive and negative
-	fmt.Printf("Add pots len: %v start: %v\n", len(state), start)
-	fmt.Println(strings.Join(state, ""))
-	for j := 0; j < 12; j++ {
-		for i := 0; i < 10; i++ {
-			fmt.Printf("%v", i)
-		}
-	}
-	fmt.Println(state[start-3], state[start-2], state[start-1], state[start], state[start+1])
 	var pos []string
 	for i := start; i < len(state)-1; i++ {
 		pos = append(pos, state[i])
@@ -118,6 +130,5 @@ func addPots(state []string, start int) int {
 		}
 	}
 
-	fmt.Println("value: ", sum)
 	return sum
 }
