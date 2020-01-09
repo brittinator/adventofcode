@@ -19,8 +19,8 @@ func main() {
 	}
 	// fmt.Println(meetsRules(
 	// 	number{
-	// 		n:   123789,
-	// 		str: "123789",
+	// 		n:   111122,
+	// 		str: "111122",
 	// 	},
 	// ))
 
@@ -37,10 +37,10 @@ func meetsRules(num number) bool {
 		// fmt.Printf("%v is not 6 digits in length", num)
 		return false
 	}
-	if num.n < 136818 || num.n > 685979 {
-		// fmt.Printf("%v is not in range", num)
-		return false
-	}
+	// if num.n < 136818 || num.n > 685979 {
+	// 	// fmt.Printf("%v is not in range", num)
+	// 	return false
+	// }
 
 	var prev number
 	valueCount := make(map[int]int)
@@ -61,10 +61,11 @@ func meetsRules(num number) bool {
 
 	}
 
-
-		var hasDupe bool
-	for num, count := range valueCount {
-		if count
+	var hasDupe bool
+	for _, count := range valueCount {
+		if count == 2 {
+			hasDupe = true
+		}
 	}
 
 	if !hasDupe {
