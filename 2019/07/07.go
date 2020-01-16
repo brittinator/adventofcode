@@ -3,34 +3,52 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"strconv"
+	"sync"
 
 	"../input"
 )
 
 func main() {
 	input := input.ReadNumberInput("07")
-
-	// input := []int{3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0}
-	// input := []int{3, 23, 3, 24, 1002, 24, 10, 24, 1002, 23, -1, 23,
-	// 101, 5, 23, 23, 1, 24, 23, 23, 4, 23, 99, 0, 0}
-	// input := []int{3, 31, 3, 32, 1002, 32, 10, 32, 1001, 31, -2, 31, 1007, 31, 0, 33,
-	// 1002, 33, 7, 33, 1, 33, 31, 31, 1, 32, 31, 31, 4, 31, 99, 0, 0, 0}
 	intcodeRunner(input)
+}
+
+func intcodeRunnerStreaming(programs []int) int {
+	// combo := []int{9, 8, 7, 6, 5}
+	inA := make(chan int, 10) // from E -> A
+	inB := make(chan int, 10) // from A -> B
+	inC := make(chan int, 10) // from B -> C
+	inD := make(chan int, 10) // from C -> D
+	inE := make(chan int, 10) // from D -> E
+
+	var wg sync.WaitGroup
+	// send the first 2 values
+	inA <- 9
+	inA <- 0
+	wg.Add(1)
+	go intcodeStreaming(programs, inA, inB, &wg, "A")
+	inB <- 8
+	wg.Add(1)
+	go intcodeStreaming(programs, inB, inC, &wg, "B")
+	inC <- 7
+	wg.Add(1)
+	go intcodeStreaming(programs, inC, inD, &wg, "C")
+	inD <- 6
+	wg.Add(1)
+	go intcodeStreaming(programs, inD, inE, &wg, "D")
+	inE <- 5
+	wg.Add(1)
+	go intcodeStreaming(programs, inE, inA, &wg, "E")
+
+	wg.Wait()
+	return -1
 }
 
 func intcodeRunner(programs []int) int {
 	var maxValue int
 	combos := generateCombos()
-
-	// var amp = 0
-	// amp = intcode(programs, 0, 0)
-	// fmt.Println("amp: ", amp)
-	// amp = intcode(programs, 1, amp)
-	// amp = intcode(programs, 2, amp)
-	// amp = intcode(programs, 3, amp)
-	// amp = intcode(programs, 4, amp)
-	// fmt.Println("amp: ", amp)
 
 	for _, combo := range combos {
 		var amp = 0
@@ -49,6 +67,109 @@ func intcodeRunner(programs []int) int {
 
 	fmt.Println("max ", maxValue)
 	return maxValue
+}
+
+func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, wg *sync.WaitGroup, letter string, logging chan<- string) {
+	var index int
+	for programs[index] != 99 {
+		l := log.New(os.Stdout, fmt.Sprintf("%v:%v: ", letter, index), 4)
+		var progression int
+
+		instruction := programs[index]
+
+		// l.Printf(
+		// 	"index %v instruction %v following ... %v %v %v ",
+		// 	index, instruction, programs[index+1], programs[index+2], programs[index+3])
+		code := instructionCode(strconv.Itoa(instruction))
+		modes := getModes(instruction)
+		// fmt.Println("code & modes ", code, modes)
+		switch code {
+		case 1, 2:
+			p1, p2 := getParams(modes, index, programs)
+			// fmt.Println("params ", p1, p2)
+			idx3 := programs[index+3]
+
+			if code == 1 { // add
+				// fmt.Printf("%v + %v at index %v\n", p1, p2, idx3)
+				val := p1 + p2
+				programs[idx3] = val
+			} else { // multiply
+				// fmt.Printf("%v * %v at index %v\n", p1, p2, idx3)
+				val := p1 * p2
+				programs[idx3] = val
+			}
+			progression = 4
+
+		case 3:
+			// fmt.Println("get Input ...")
+			input := <-incoming
+			logging <- l.Println("input is", input)
+			param := programs[index+1]
+			// fmt.Printf("placing %v at index %v\n", input, param)
+			programs[param] = input
+			progression = 2
+		case 4:
+			param := programs[index+1]
+			if modes[0] == 0 {
+				param = programs[param]
+			}
+			// l.Println("outgoing ...", param)
+			outgoing <- param
+			l.Println("completed outgoing of ", param, programs)
+			progression = 2
+		case 5:
+			p1, p2 := getParams(modes, index, programs)
+
+			if p1 != 0 {
+				// fmt.Printf("is %v != 0? YES", p1)
+				progression = p2 - index
+			} else {
+				// fmt.Printf("is %v != 0? NO", p1)
+				progression = 3
+			}
+		case 6:
+			p1, p2 := getParams(modes, index, programs)
+
+			if p1 == 0 {
+				// fmt.Printf("is %v = 0? YES", p1)
+				progression = p2 - index
+			} else {
+				// fmt.Printf("is %v = 0? NO", p1)
+				progression = 3
+			}
+		case 7:
+			p1, p2 := getParams(modes, index, programs)
+			idx3 := programs[index+3]
+			// fmt.Printf("is %v < %v? ", p1, p2)
+
+			if p1 < p2 {
+				programs[idx3] = 1
+			} else {
+				programs[idx3] = 0
+			}
+			progression = 4
+		case 8:
+			p1, p2 := getParams(modes, index, programs)
+			idx3 := programs[index+3]
+			// fmt.Printf("is %v == %v? will set at index 3 (idx: %v)\n", p1, p2, idx3)
+			if p1 == p2 {
+				programs[idx3] = 1
+			} else {
+				programs[idx3] = 0
+			}
+			progression = 4
+		default:
+			log.Fatalf("code unrecognized %v", code)
+		}
+		// fmt.Println(index, progression)
+		index = index + progression
+		// l.Println("new index: ", index)
+	}
+	l := log.New(os.Stdout, fmt.Sprintf("%v: ", letter), 0)
+
+	l.Printf("found 99! at index %v, closing and done(wg)", index)
+	close(outgoing)
+	wg.Done()
 }
 
 func intcode(programs []int, input1, input2 int) int {
