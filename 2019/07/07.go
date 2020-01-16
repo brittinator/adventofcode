@@ -16,55 +16,72 @@ func main() {
 }
 
 func intcodeRunnerStreaming(programs []int) int {
-	// combo := []int{9, 8, 7, 6, 5}
-	inA := make(chan int, 10) // from E -> A
-	inB := make(chan int, 10) // from A -> B
-	inC := make(chan int, 10) // from B -> C
-	inD := make(chan int, 10) // from C -> D
-	inE := make(chan int, 10) // from D -> E
+	const _offset = 5
+	combos := generateCombos()
 
-	var wg sync.WaitGroup
-	// send the first 2 values
-	inA <- 9
-	inA <- 0
-	wg.Add(1)
-	// give each a copy of programs!!!!!!!!!
-	pgm := make([]int, len(programs))
-	for i, p := range programs {
-		pgm[i] = p
-	}
-	go intcodeStreaming(pgm, inA, inB, &wg, "A")
-	inB <- 8
-	wg.Add(1)
-	pgm = make([]int, len(programs))
-	for i, p := range programs {
-		pgm[i] = p
-	}
-	go intcodeStreaming(pgm, inB, inC, &wg, "B")
-	inC <- 7
-	wg.Add(1)
-	pgm = make([]int, len(programs))
-	for i, p := range programs {
-		pgm[i] = p
-	}
-	go intcodeStreaming(pgm, inC, inD, &wg, "C")
-	inD <- 6
-	wg.Add(1)
-	pgm = make([]int, len(programs))
-	for i, p := range programs {
-		pgm[i] = p
-	}
-	go intcodeStreaming(pgm, inD, inE, &wg, "D")
-	inE <- 5
-	wg.Add(1)
-	pgm = make([]int, len(programs))
-	for i, p := range programs {
-		pgm[i] = p
-	}
-	go intcodeStreaming(pgm, inE, inA, &wg, "E")
+	var maxValue int
 
-	wg.Wait()
-	return -1
+	for _, combo := range combos {
+		inA := make(chan int, 10) // from E -> A
+		inB := make(chan int, 10) // from A -> B
+		inC := make(chan int, 10) // from B -> C
+		inD := make(chan int, 10) // from C -> D
+		inE := make(chan int, 10) // from D -> E
+
+		var wg sync.WaitGroup
+		// send the first 2 values
+		inA <- combo[0] + _offset
+		inA <- 0
+		wg.Add(1)
+		// give each a copy of programs!!!!!!!!!
+		pgm := make([]int, len(programs))
+		for i, p := range programs {
+			pgm[i] = p
+		}
+		go intcodeStreaming(pgm, inA, inB, &wg, "A")
+		inB <- combo[1] + _offset
+		wg.Add(1)
+		pgm = make([]int, len(programs))
+		for i, p := range programs {
+			pgm[i] = p
+		}
+		go intcodeStreaming(pgm, inB, inC, &wg, "B")
+		inC <- combo[2] + _offset
+		wg.Add(1)
+		pgm = make([]int, len(programs))
+		for i, p := range programs {
+			pgm[i] = p
+		}
+		go intcodeStreaming(pgm, inC, inD, &wg, "C")
+		inD <- combo[3] + _offset
+		wg.Add(1)
+		pgm = make([]int, len(programs))
+		for i, p := range programs {
+			pgm[i] = p
+		}
+		go intcodeStreaming(pgm, inD, inE, &wg, "D")
+		inE <- combo[4] + _offset
+		wg.Add(1)
+		pgm = make([]int, len(programs))
+		for i, p := range programs {
+			pgm[i] = p
+		}
+		// this one is special because we need to send the amplified signal to the engines.
+		var eValue int
+		go func() {
+			eValue = intcodeStreaming(pgm, inE, inA, &wg, "E")
+		}()
+		// go intcodeStreaming(pgm, inE, inA, &wg, "E")
+
+		wg.Wait()
+		if eValue > maxValue {
+			maxValue = eValue
+		}
+
+	}
+
+	fmt.Println("max ", maxValue)
+	return maxValue
 }
 
 func intcodeRunner(programs []int) int {
@@ -90,8 +107,9 @@ func intcodeRunner(programs []int) int {
 	return maxValue
 }
 
-func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, wg *sync.WaitGroup, letter string) {
+func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, wg *sync.WaitGroup, letter string) int {
 	var index int
+	var lastSent int
 	for programs[index] != 99 {
 		l := log.New(os.Stdout, fmt.Sprintf("%v:%v: ", letter, index), 0)
 		// progression is how far to move the indexes forward.
@@ -134,6 +152,7 @@ func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, 
 			}
 			// l.Println("outgoing ...", param)
 			outgoing <- param
+			lastSent = param
 			l.Println("completed outgoing of ", param)
 			progression = 2
 		case 5:
@@ -180,6 +199,8 @@ func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, 
 	l.Printf("found 99! @ index %v, closing & done(wg)", index)
 	close(outgoing)
 	wg.Done()
+
+	return lastSent
 }
 
 func intcode(programs []int, input1, input2 int) int {
