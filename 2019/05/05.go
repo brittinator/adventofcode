@@ -7,12 +7,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"../input"
 )
 
 func main() {
-	numbers := input.ReadNumberInput("05")
+	numbers := []int{3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0}
+
+	// numbers := input.ReadNumberInput("05")
 	// numbers := []int{1002, 4, 3, 4, 33}
 	// numbers := []int{3, 21, 1008, 21, 8, 20, 1005, 20, 22, 107, 8, 21, 20, 1006, 20, 31,
 	// 	1106, 0, 36, 98, 0, 0, 1002, 21, 125, 20, 4, 20, 1105, 1, 46, 104,
@@ -21,7 +21,8 @@ func main() {
 	intcode(numbers)
 }
 
-func intcode(programs []int) {
+func intcode(programs []int) int {
+	var lastOutputtedValue int
 	var index int
 	for programs[index] != 99 {
 		var progression int
@@ -66,8 +67,10 @@ func intcode(programs []int) {
 			param := programs[index+1]
 			if modes[0] == 0 {
 				fmt.Println("\nprinting ", programs[param])
+				lastOutputtedValue = programs[param]
 			} else {
 				fmt.Println("\nprinting ", param)
+				lastOutputtedValue = param
 			}
 			// only a single param, so only need to move 2 spaces
 			progression = 2
@@ -118,6 +121,8 @@ func intcode(programs []int) {
 		fmt.Println(index, progression)
 		index = index + progression
 	}
+
+	return lastOutputtedValue
 }
 
 func getInput() int {
