@@ -28,19 +28,40 @@ func intcodeRunnerStreaming(programs []int) int {
 	inA <- 9
 	inA <- 0
 	wg.Add(1)
-	go intcodeStreaming(programs, inA, inB, &wg, "A")
+	// give each a copy of programs!!!!!!!!!
+	pgm := make([]int, len(programs))
+	for i, p := range programs {
+		pgm[i] = p
+	}
+	go intcodeStreaming(pgm, inA, inB, &wg, "A")
 	inB <- 8
 	wg.Add(1)
-	go intcodeStreaming(programs, inB, inC, &wg, "B")
+	pgm = make([]int, len(programs))
+	for i, p := range programs {
+		pgm[i] = p
+	}
+	go intcodeStreaming(pgm, inB, inC, &wg, "B")
 	inC <- 7
 	wg.Add(1)
-	go intcodeStreaming(programs, inC, inD, &wg, "C")
+	pgm = make([]int, len(programs))
+	for i, p := range programs {
+		pgm[i] = p
+	}
+	go intcodeStreaming(pgm, inC, inD, &wg, "C")
 	inD <- 6
 	wg.Add(1)
-	go intcodeStreaming(programs, inD, inE, &wg, "D")
+	pgm = make([]int, len(programs))
+	for i, p := range programs {
+		pgm[i] = p
+	}
+	go intcodeStreaming(pgm, inD, inE, &wg, "D")
 	inE <- 5
 	wg.Add(1)
-	go intcodeStreaming(programs, inE, inA, &wg, "E")
+	pgm = make([]int, len(programs))
+	for i, p := range programs {
+		pgm[i] = p
+	}
+	go intcodeStreaming(pgm, inE, inA, &wg, "E")
 
 	wg.Wait()
 	return -1
@@ -69,12 +90,12 @@ func intcodeRunner(programs []int) int {
 	return maxValue
 }
 
-func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, wg *sync.WaitGroup, letter string, logging chan<- string) {
+func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, wg *sync.WaitGroup, letter string) {
 	var index int
 	for programs[index] != 99 {
-		l := log.New(os.Stdout, fmt.Sprintf("%v:%v: ", letter, index), 4)
+		l := log.New(os.Stdout, fmt.Sprintf("%v:%v: ", letter, index), 0)
+		// progression is how far to move the indexes forward.
 		var progression int
-
 		instruction := programs[index]
 
 		// l.Printf(
@@ -86,9 +107,7 @@ func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, 
 		switch code {
 		case 1, 2:
 			p1, p2 := getParams(modes, index, programs)
-			// fmt.Println("params ", p1, p2)
 			idx3 := programs[index+3]
-
 			if code == 1 { // add
 				// fmt.Printf("%v + %v at index %v\n", p1, p2, idx3)
 				val := p1 + p2
@@ -103,7 +122,7 @@ func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, 
 		case 3:
 			// fmt.Println("get Input ...")
 			input := <-incoming
-			logging <- l.Println("input is", input)
+			l.Println("input is", input)
 			param := programs[index+1]
 			// fmt.Printf("placing %v at index %v\n", input, param)
 			programs[param] = input
@@ -115,47 +134,38 @@ func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, 
 			}
 			// l.Println("outgoing ...", param)
 			outgoing <- param
-			l.Println("completed outgoing of ", param, programs)
+			l.Println("completed outgoing of ", param)
 			progression = 2
 		case 5:
 			p1, p2 := getParams(modes, index, programs)
-
+			progression = 3
 			if p1 != 0 {
 				// fmt.Printf("is %v != 0? YES", p1)
 				progression = p2 - index
-			} else {
-				// fmt.Printf("is %v != 0? NO", p1)
-				progression = 3
 			}
 		case 6:
 			p1, p2 := getParams(modes, index, programs)
-
+			progression = 3
 			if p1 == 0 {
 				// fmt.Printf("is %v = 0? YES", p1)
 				progression = p2 - index
-			} else {
-				// fmt.Printf("is %v = 0? NO", p1)
-				progression = 3
 			}
 		case 7:
 			p1, p2 := getParams(modes, index, programs)
 			idx3 := programs[index+3]
 			// fmt.Printf("is %v < %v? ", p1, p2)
-
+			programs[idx3] = 0
 			if p1 < p2 {
 				programs[idx3] = 1
-			} else {
-				programs[idx3] = 0
 			}
 			progression = 4
 		case 8:
 			p1, p2 := getParams(modes, index, programs)
 			idx3 := programs[index+3]
 			// fmt.Printf("is %v == %v? will set at index 3 (idx: %v)\n", p1, p2, idx3)
+			programs[idx3] = 0
 			if p1 == p2 {
 				programs[idx3] = 1
-			} else {
-				programs[idx3] = 0
 			}
 			progression = 4
 		default:
@@ -167,7 +177,7 @@ func intcodeStreaming(programs []int, incoming <-chan int, outgoing chan<- int, 
 	}
 	l := log.New(os.Stdout, fmt.Sprintf("%v: ", letter), 0)
 
-	l.Printf("found 99! at index %v, closing and done(wg)", index)
+	l.Printf("found 99! @ index %v, closing & done(wg)", index)
 	close(outgoing)
 	wg.Done()
 }
