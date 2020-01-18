@@ -9,9 +9,11 @@ import (
 
 func main() {
 	input := input.ReadLineInput("06")
-	nodes, root := createTree(input)
+	nodes, _ := createTree(input)
 
-	fmt.Println(traverse(nodes[root], nodes))
+	// fmt.Println(traverse(nodes[root], nodes))
+
+	fmt.Println(findSantaDistance(nodes))
 }
 
 type node struct {
@@ -92,4 +94,39 @@ func (q *queue) dequeue() *node {
 
 func (q *queue) enqueue(node *node) {
 	q.n = append(q.n, node)
+}
+
+func findSantaDistance(allNodes map[string]*node) int {
+	q := queue{}
+	// start at YOU's parent or child, dist 0
+	// BFS until find SAN, then subtract 1 from dist
+	you := allNodes["YOU"]
+	start := allNodes[allNodes["YOU"].parent]
+	q.enqueue(start)
+	for _, child := range you.children {
+		q.enqueue(child)
+	}
+	visited := make(map[string]struct{}, 0)
+	visited["YOU"] = struct{}{}
+
+	for !q.empty() {
+		curr := q.dequeue()
+		if _, ok := visited[curr.name]; ok {
+			continue
+		}
+		visited[curr.name] = struct{}{}
+		if curr.name == "SAN" {
+			return curr.dist - 1
+		}
+		parent := allNodes[curr.parent]
+		parent.dist = curr.dist + 1
+		q.enqueue(parent)
+		for _, child := range curr.children {
+			child.dist = curr.dist + 1
+			q.enqueue(child)
+		}
+	}
+
+	return -1
+
 }
