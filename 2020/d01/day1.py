@@ -1,7 +1,7 @@
 from helpers.read_input import *
 
 def accounting():
-    nums = read_line_input_int("day1")
+    nums = read_line_input_int("d01")
     matches = {}
     pairs = []
     for n in nums:
@@ -18,7 +18,7 @@ def accounting():
 def accounting_three():
     # if 2 values are > 2020 it's not the answer
     # otherwise, search the remainder of the numbers to find the 'pair'
-    nums = read_line_input_int("day1")
+    nums = read_line_input_int("d01")
     # possibly sort?
     matches = {}
     for n in nums:
