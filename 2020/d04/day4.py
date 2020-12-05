@@ -1,6 +1,5 @@
 from helpers.read_input import *
 
-
 def valid_byr(byr):
     return len(byr) == 4 and 1920 <= int(byr) and int(byr) <= 2002
 
@@ -32,10 +31,7 @@ def valid_ecl(color):
     return color in valid
 
 def valid_id(id):
-    if len(id) != 9:
-        return False
-    return id.isnumeric()
-
+    return len(id) == 9 and id.isnumeric()
 
 def is_valid_passport(passport):
     required = {'byr': valid_byr, 'iyr': valid_iyr, 'eyr': valid_eyr,
@@ -48,17 +44,14 @@ def is_valid_passport(passport):
     for l in passport:
         fields = l.strip().split(" ")
         for field in fields:
-            for req in required:
-                if req in field:
-                    _, val = field.split(f"{req}:")
-                    if required[req](val) is False:
-                        return False
-                    marked_fields[req] = True
+            key, val = field.split(":", maxsplit=1)
+            fxn =  required.get(key)
+            if fxn is not None and fxn(val) is False:
+                    return False
+            marked_fields[key] = True
 
-    vals = marked_fields.values()
-    for v in vals:
-        if v == False:
-            return False
+    if False in marked_fields.values():
+        return False
 
     return True
 
