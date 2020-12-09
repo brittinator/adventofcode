@@ -1,8 +1,8 @@
 from typing import List
 
-def read_line_input(day:str) -> List[str]:
+def read_line_input(day:str, file='input') -> List[str]:
     lines = []
-    with open(f"{day}/input") as file:
+    with open(f"{day}/{file}") as file:
         for line in file:
             lines.append(line.strip())
 
