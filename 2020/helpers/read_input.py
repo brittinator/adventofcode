@@ -9,9 +9,9 @@ def read_line_input(day:str, file='input') -> List[str]:
     return lines
 
 
-def read_line_input_int(day: str) -> List[int]:
+def read_line_input_int(day: str, file='input') -> List[int]:
     lines = []
-    with open(f"{day}/input") as file:
+    with open(f"{day}/{file}") as file:
         for line in file:
             lines.append(int(line.strip()))
 
